@@ -454,7 +454,7 @@ workflow MAG {
                                     Taxonomic information
     ================================================================================
     */
-    if ( !ch_centrifuge_db_file.isEmpty() ) {
+    if ( ch_centrifuge_db_file ) {
         if ( ch_centrifuge_db_file.extension in ['gz', 'tgz'] ) {
             // Expects to be tar.gz!
             ch_db_for_centrifuge = CENTRIFUGE_DB_PREPARATION ( ch_centrifuge_db_file ).db
@@ -470,13 +470,15 @@ workflow MAG {
 
     // Centrifuge val(db_name) has to be the basename of any of the
     //   index files up to but not including the final .1.cf
-    ch_db_for_centrifuge = ch_db_for_centrifuge
-                            .collect()
-                            .map{
-                                db ->
-                                    def db_name = db[0].getBaseName().split('\\.')[0]
-                                    [ db_name, db ]
-                            }
+    if ( !ch_db_for_centrifuge.isEmpty() ) {
+        ch_db_for_centrifuge = ch_db_for_centrifuge
+                                .collect()
+                                .map{
+                                    db ->
+                                        def db_name = db[0].getBaseName().split('\\.')[0]
+                                        [ db_name, db ]
+                                }
+    }
 
     CENTRIFUGE (
         ch_short_reads,
@@ -484,7 +486,7 @@ workflow MAG {
     )
     ch_versions = ch_versions.mix(CENTRIFUGE.out.versions.first())
 
-    if ( !ch_kraken2_db_file.isEmpty() ) {
+    if ( ch_kraken2_db_file ) {
         if ( ch_kraken2_db_file.extension in ['gz', 'tgz'] ) {
             // Expects to be tar.gz!
             ch_db_for_kraken2 = KRAKEN2_DB_PREPARATION ( ch_kraken2_db_file ).db
@@ -938,7 +940,8 @@ workflow MAG {
                     ch_gtdb_bins,
                     ch_busco_summary,
                     ch_checkm_summary,
-                    gtdb
+                    gtdb,
+                    ch_busco_db
                 )
                 ch_versions = ch_versions.mix(GTDBTK.out.versions.first())
                 ch_gtdbtk_summary = GTDBTK.out.summary

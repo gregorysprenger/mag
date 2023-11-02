@@ -12,29 +12,32 @@ workflow GTDBTK {
     busco_summary     // channel: path
     checkm_summary    // channel: path
     gtdb              // channel: path
+    busco_db          // channel: path
 
     main:
     // Filter bins: classify only medium & high quality MAGs
     ch_bin_metrics = Channel.empty()
     if ( params.binqc_tool == 'busco' ){
-        // Collect completeness and contamination metrics from busco summary
-        ch_bin_metrics = busco_summary
-            .splitCsv(header: true, sep: '\t')
-            .map { row ->
-                        def completeness  = -1
-                        def contamination = -1
-                        def missing, duplicated
-                        if (params.busco_db.getBaseName().contains('odb10')) {
-                            missing    = row.'%Missing (specific)'      // TODO or just take '%Complete'?
-                            duplicated = row.'%Complete and duplicated (specific)'
-                        } else {
-                            missing    = row.'%Missing (domain)'
-                            duplicated = row.'%Complete and duplicated (domain)'
-                        }
-                        if (missing != '') completeness = 100.0 - Double.parseDouble(missing)
-                        if (duplicated != '') contamination = Double.parseDouble(duplicated)
-                        [row.'GenomeBin', completeness, contamination]
-            }
+        if ( busco_db ) {
+            // Collect completeness and contamination metrics from busco summary
+            ch_bin_metrics = busco_summary
+                .splitCsv(header: true, sep: '\t')
+                .map { row ->
+                            def completeness  = -1
+                            def contamination = -1
+                            def missing, duplicated
+                            if (busco_db.getBaseName().contains('odb10')) {
+                                missing    = row.'%Missing (specific)'      // TODO or just take '%Complete'?
+                                duplicated = row.'%Complete and duplicated (specific)'
+                            } else {
+                                missing    = row.'%Missing (domain)'
+                                duplicated = row.'%Complete and duplicated (domain)'
+                            }
+                            if (missing != '') completeness = 100.0 - Double.parseDouble(missing)
+                            if (duplicated != '') contamination = Double.parseDouble(duplicated)
+                            [row.'GenomeBin', completeness, contamination]
+                }
+        }
     } else {
         // Collect completeness and contamination metrics from checkm summary
         ch_bin_metrics = checkm_summary

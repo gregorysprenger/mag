@@ -13,7 +13,7 @@ workflow BUSCO_QC {
     bins       // channel: [ val(meta), path(bin) ]
 
     main:
-    if ( !busco_db.isEmpty() ) {
+    if ( busco_db ) {
         if ( busco_db.extension in ['gz', 'tgz'] ) {
             // Expects to be tar.gz!
             ch_db_for_busco = BUSCO_DB_PREPARATION ( busco_db ).db
